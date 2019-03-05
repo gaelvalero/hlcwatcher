@@ -1,0 +1,30 @@
+{
+  "name": "hlcwatcher",
+  "version": "1.0.0",
+  "description": "Hot Lap Challenge Watcher for /r/Forza Discord",
+  "main": "index.js",
+  "dependencies": {
+    "googleapis": "37.2.0",
+    "discord.js": "11.4.2"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gaelvalero/hlcwatcher.git"
+  },
+  "keywords": [
+    "discord.js",
+    "forza",
+    "google",
+    "sheet",
+    "api"
+  ],
+  "author": "gaelvalero",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gaelvalero/hlcwatcher/issues"
+  },
+  "homepage": "https://github.com/gaelvalero/hlcwatcher#readme"
+}
