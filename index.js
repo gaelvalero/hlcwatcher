@@ -274,29 +274,50 @@ client.on('ready', () => {
         
             var messageLeaderboardFH4Drift = '';
             var index = 1;
-            arrayTimes['fh4drift'].forEach(element => {
-              messageLeaderboardFH4Drift += "**" + index + '**. ' + element['name'] + ' - ' + element['score'] + '\n';
-              index++;
-            });
+            if(arrayTimes['fh4drift'].length > 0)
+            {
+              arrayTimes['fh4drift'].forEach(element => {
+                messageLeaderboardFH4Drift += "**" + index + '**. ' + element['name'] + ' - ' + element['score'] + '\n';
+                index++;
+              });
+            }
+            else
+            {
+              messageLeaderboardFH4Drift = "There's no entries in this leaderboard !"
+            }
         
             var messageLeaderboardFH4HLC = '';
             index = 1;
-            arrayTimes['fh4hlc'].forEach(element => {
-              messageLeaderboardFH4HLC += "**" + index + '**. ' + element['name'] + ' - ' + element['score'] + '\n';
-              index++;
-            });
+            if(arrayTimes['fh4hlc'].length > 0)
+            {
+              arrayTimes['fh4hlc'].forEach(element => {
+                messageLeaderboardFH4HLC += "**" + index + '**. ' + element['name'] + ' - ' + element['score'] + '\n';
+                index++;
+              });
+            }
+            else
+            {
+              messageLeaderboardFH4HLC = "There's no entries in this leaderboard !"
+            }
         
             var messageLeaderboardFM7HLC = '';
             index = 1;
-            arrayTimes['fm7hlc'].forEach(element => {
-              messageLeaderboardFM7HLC += "**" + index + '**. ' + element['name'] + ' - ' + element['score'] + '\n';
-              index++;
-            });
-        
+            if(arrayTimes['fm7hlc'].length > 0)
+            {
+              arrayTimes['fm7hlc'].forEach(element => {
+                messageLeaderboardFM7HLC += "**" + index + '**. ' + element['name'] + ' - ' + element['score'] + '\n';
+                index++;
+              });
+            }
+            else
+            {
+              messageLeaderboardFM7HLC = "There's no entries in this leaderboard !"
+            }
+
             channel.send({
               embed: {
                 title: "Current leaderboards for FH4 HLC",
-                color: 282745,
+                color: 0xe67e22,
                 timestamp: new Date(),
                 fields: [{
                   name: "FH4 HLC",
@@ -306,7 +327,7 @@ client.on('ready', () => {
             }).then(() => channel.send({
               embed: {
                 title: "Current leaderboards for FM7 HLC",
-                color: 777777,
+                color: 0x2980b9,
                 timestamp: new Date(),
                 fields: [{
                   name: "FM7 HLC",
@@ -316,15 +337,14 @@ client.on('ready', () => {
             })).then(() => channel.send({
               embed: {
                 title: "Current leaderboards for FH4 Drift",
-                color: 629846,
+                color: 0x8e44ad,
                 timestamp: new Date(),
                 fields: [{
-                  name: "FM4 Drift",
+                  name: "FH4 Drift",
                   value: messageLeaderboardFH4Drift
                 }, ]
-        
               }
-            })).then(() => client.destroy());
+            })).then(() => console.log("All message are sent")).then(() => client.destroy());
           }
 });
 
