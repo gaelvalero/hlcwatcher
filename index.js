@@ -268,7 +268,9 @@ client.on('ready', () => {
               limit: 3
             }).then(messages => channel.bulkDelete(messages));
         
-            arrayTimes['fh4drift'] = arrayTimes['fh4drift'].sort(dynamicSort('-score'));
+            arrayTimes['fh4drift'] = arrayTimes['fh4drift'].sort(function(a, b){
+              return b.score-a.score
+            });
             arrayTimes['fh4hlc'] = timeSort(arrayTimes['fh4hlc']);
             arrayTimes['fm7hlc'] = timeSort(arrayTimes['fm7hlc']);
         
@@ -380,18 +382,6 @@ function arraysEqual(arr1, arr2) {
       return false;
   }
   return true;
-}
-
-function dynamicSort(property) {
-  var sortOrder = 1;
-  if (property[0] === "-") {
-    sortOrder = -1;
-    property = property.substr(1);
-  }
-  return function (a, b) {
-    var result = (a[property] < b[property]) ? -1 : (a[property] > b[property]) ? 1 : 0;
-    return result * sortOrder;
-  }
 }
 
 function timeSort(array) {
