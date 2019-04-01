@@ -19,6 +19,7 @@ const TOKEN_PATH = 'token.json';
 
 var spreadsheet = process.argv[2];
 var sheet = process.argv[3];
+var date = Date.now() + " - ";
 
 // Load client secrets from a local file.
 fs.readFile('/home/hiteam/Documents/hlcwatcher/credentials.json', (err, content) => {
@@ -96,154 +97,164 @@ function listTimes(auth) {
     range: sheet + '!A2:I',
   }, (err, res) => {
     if (err) return console.log('The API returned an error: ' + err);
-    const rows = res.data.values;
-    if (rows.length) {
+    if (res.data.values) {
+      const rows = res.data.values;
+      if (rows.length) {
+        var arrayFH4HLC = [];
+        //var arrayFM7HLC = [];
+        var arrayFH4DRIFT = [];
 
-      var arrayFH4HLC = new Array();
-      var arrayFM7HLC = new Array();
-      var arrayFH4DRIFT = new Array();
+        rows.map((row) => {
+          let timestamp = `${row[0]}`;
+          let nickname = `${row[1]}`;
+          let fh4time = `${row[2]}`;
+          let fh4proof = `${row[3]}`;
+          if (fh4time != '' && fh4time != 'undefined' && fh4time != '.') {
+            arrayFH4HLC.push({
+              time: timestamp,
+              name: nickname,
+              score: fh4time,
+              proof: fh4proof
+            });
+          }
+        });
 
-      rows.map((row) => {
-        let timestamp = `${row[0]}`;
-        let nickname = `${row[1]}`;
-        let fh4time = `${row[2]}`;
-        let fh4proof = `${row[3]}`;
-        if (fh4time != '' && fh4time != 'undefined' && fh4time != '.') {
-          arrayFH4HLC.push({
-            time: timestamp,
-            name: nickname,
-            score: fh4time,
-            proof: fh4proof
-          });
-        }
-      });
-      arrayTimes['fh4hlc'] = arrayFH4HLC;
+        arrayTimes['fh4hlc'] = getUnique(timeSort(arrayFH4HLC),"name");
+        //arrayTimes['fh4hlc'] = arrayFH4HLC;
 
-      rows.map((row) => {
-        let timestamp = `${row[0]}`;
-        let nickname = `${row[1]}`;
-        let fm7time = `${row[4]}`;
-        let fm7proof = `${row[5]}`;
+        /*rows.map((row) => {
+          let timestamp = `${row[0]}`;
+          let nickname = `${row[1]}`;
+          let fm7time = `${row[4]}`;
+          let fm7proof = `${row[5]}`;
 
-        if (fm7time != '' && fm7time != 'undefined' && fm7time != '.') {
-          arrayFM7HLC.push({
-            time: timestamp,
-            name: nickname,
-            score: fm7time,
-            proof: fm7proof
-          });
-        }
-      });
-      arrayTimes['fm7hlc'] = arrayFM7HLC;
+          if (fm7time != '' && fm7time != 'undefined' && fm7time != '.') {
+            arrayFM7HLC.push({
+              time: timestamp,
+              name: nickname,
+              score: fm7time,
+              proof: fm7proof
+            });
+          }
+        });
+        arrayTimes['fm7hlc'] = arrayFM7HLC;*/
 
-      rows.map((row) => {
-        let timestamp = `${row[0]}`;
-        let nickname = `${row[1]}`;
-        let fh4drift = `${row[6]}`;
-        let fh4proof = `${row[7]}`;
+        rows.map((row) => {
+          let timestamp = `${row[0]}`;
+          let nickname = `${row[1]}`;
+          let fh4drift = `${row[6]}`;
+          let fh4proof = `${row[7]}`;
 
-        if (fh4drift != '' && fh4drift != 'undefined' && fh4drift != '.') {
-          arrayFH4DRIFT.push({
-            time: timestamp,
-            name: nickname,
-            score: fh4drift,
-            proof: fh4proof
-          });
-        }
-      });
-      arrayTimes['fh4drift'] = arrayFH4DRIFT;
+          if (fh4drift != '' && fh4drift != 'undefined' && fh4drift != '.') {
+            arrayFH4DRIFT.push({
+              time: timestamp,
+              name: nickname,
+              score: fh4drift,
+              proof: fh4proof
+            });
+          }
+        });
+        arrayTimes['fh4drift'] = getUnique(arrayFH4DRIFT.sort(function (a, b) {
+          return b.score - a.score
+        }),"name");
+
+      } else {
+        console.log('No data found.');
+      }
+      if (Object.keys(arrayTimes).length === 0 && arrayTimes.constructor === Object) {
+        console.log("Error retrieving the data");
+        client.destroy();
+        return;
+      }
+      console.log(`Comparing new data`);
+      var fileData = {};
+      if (fs.existsSync(spreadsheet + '.txt')) {
+        fs.readFile(spreadsheet + '.txt', 'utf8', function (err, data) {
+          if (err) throw err;
+          fileData = JSON.parse(data);
+          if (JSON.stringify(fileData) === JSON.stringify(arrayTimes)) {
+            console.log(date + `No differences found`);
+            client.destroy();
+          } else {
+            console.log(`Differences found - Checking values`);
+
+            var arrayNewFH4HLC = arrayTimes.fh4hlc;
+            //var arrayNewFM7HLC = arrayTimes.fm7hlc;
+            var arrayNewFH4DRIFT = arrayTimes.fh4drift;
+
+            var arrayOldFH4HLC = fileData.fh4hlc;
+            //var arrayOldFM7HLC = fileData.fm7hlc;
+            var arrayOldFH4DRIFT = fileData.fh4drift;
+
+
+            if (!arraysEqual(arrayNewFH4HLC, arrayOldFH4HLC)) {
+              console.log(`Checking FH4 HLC values`);
+              for (let x = 0; x < arrayNewFH4HLC.length; x++) {
+                var check = 0;
+                for (let y = 0; y < arrayOldFH4HLC.length; y++) {
+                  if (JSON.stringify(arrayNewFH4HLC[x]) === JSON.stringify(arrayOldFH4HLC[y])) {
+                    check = 1;
+                  }
+                }
+                if (check != 1) {
+                  console.log('+ New FH4 HLC entry found');
+                  newTimes.push(arrayNewFH4HLC[x]);
+                }
+              }
+            }
+
+            /*if (!arraysEqual(arrayNewFM7HLC, arrayOldFM7HLC)) {
+              console.log(`Checking FM7 HLC values`);
+              for (let x = 0; x < arrayNewFM7HLC.length; x++) {
+                var check = 0;
+                for (let y = 0; y < arrayOldFM7HLC.length; y++) {
+                  if (JSON.stringify(arrayNewFM7HLC[x]) === JSON.stringify(arrayOldFM7HLC[y])) {
+                    check = 1;
+                  }
+                }
+                if (check != 1) {
+                  console.log('+ New FM7 HLC entry found');
+                  newTimes.push(arrayNewFM7HLC[x]);
+                }
+              }
+            }*/
+
+            if (!arraysEqual(arrayNewFH4DRIFT, arrayOldFH4DRIFT)) {
+              console.log(`Checking FH4 Drift values`);
+              for (let x = 0; x < arrayNewFH4DRIFT.length; x++) {
+                var check = 0;
+                for (let y = 0; y < arrayOldFH4DRIFT.length; y++) {
+                  if (JSON.stringify(arrayNewFH4DRIFT[x]) === JSON.stringify(arrayOldFH4DRIFT[y])) {
+                    check = 1;
+                  }
+                }
+                if (check != 1) {
+                  console.log('+ New FH4 Drift entry found');
+                  newTimes.push(arrayNewFH4DRIFT[x]);
+                }
+              }
+            }
+            console.log(`Creating new Backup`);
+            var json = JSON.stringify(arrayTimes);
+            fs.writeFile(spreadsheet + '.txt', json, function (err) {
+              if (err) return console.log(err);
+            });
+            client.login('');
+          }
+        });
+      } else {
+        console.log(`Backup file not found - creating one`);
+        var json = JSON.stringify(arrayTimes);
+        fs.writeFile(spreadsheet + '.txt', json, function (err) {
+          if (err) return console.log(err);
+        });
+        client.destroy();
+        return;
+      }
     } else {
-      console.log('No data found.');
-    }
-    if (Object.keys(arrayTimes).length === 0 && arrayTimes.constructor === Object) {
-      console.log("Error retrieving the data");
-      client.destroy();
-      return;
-    }
-    console.log(`Comparing new data`);
-    var fileData = {};
-    if (fs.existsSync(spreadsheet + '.txt')) {
-      fs.readFile(spreadsheet + '.txt', 'utf8', function (err, data) {
-        if (err) throw err;
-        fileData = JSON.parse(data);
-        if (JSON.stringify(fileData) === JSON.stringify(arrayTimes)) {
-          console.log(`No differences found`);
-          client.destroy();
-        } else {
-          console.log(`Differences found - Checking values`);
-
-          var arrayNewFH4HLC = arrayTimes.fh4hlc;
-          var arrayNewFM7HLC = arrayTimes.fm7hlc;
-          var arrayNewFH4DRIFT = arrayTimes.fh4drift;
-
-          var arrayOldFH4HLC = fileData.fh4hlc;
-          var arrayOldFM7HLC = fileData.fm7hlc;
-          var arrayOldFH4DRIFT = fileData.fh4drift;
-
-
-          if (!arraysEqual(arrayNewFH4HLC, arrayOldFH4HLC)) {
-            console.log(`Checking FH4 HLC values`);
-            for (let x = 0; x < arrayNewFH4HLC.length; x++) {
-              var check = 0;
-              for (let y = 0; y < arrayOldFH4HLC.length; y++) {
-                if (JSON.stringify(arrayNewFH4HLC[x]) === JSON.stringify(arrayOldFH4HLC[y])) {
-                  check = 1;
-                }
-              }
-              if (check != 1) {
-                console.log('+ New FH4 HLC entry found');
-                newTimes.push(arrayNewFH4HLC[x]);
-              }
-            }
-          }
-
-          if (!arraysEqual(arrayNewFM7HLC, arrayOldFM7HLC)) {
-            console.log(`Checking FM7 HLC values`);
-            for (let x = 0; x < arrayNewFM7HLC.length; x++) {
-              var check = 0;
-              for (let y = 0; y < arrayOldFM7HLC.length; y++) {
-                if (JSON.stringify(arrayNewFM7HLC[x]) === JSON.stringify(arrayOldFM7HLC[y])) {
-                  check = 1;
-                }
-              }
-              if (check != 1) {
-                console.log('+ New FM7 HLC entry found');
-                newTimes.push(arrayNewFM7HLC[x]);
-              }
-            }
-          }
-
-          if (!arraysEqual(arrayNewFH4DRIFT, arrayOldFH4DRIFT)) {
-            console.log(`Checking FH4 Drift values`);
-            for (let x = 0; x < arrayNewFH4DRIFT.length; x++) {
-              var check = 0;
-              for (let y = 0; y < arrayOldFH4DRIFT.length; y++) {
-                if (JSON.stringify(arrayNewFH4DRIFT[x]) === JSON.stringify(arrayOldFH4DRIFT[y])) {
-                  check = 1;
-                }
-              }
-              if (check != 1) {
-                console.log('+ New FH4 Drift entry found');
-                newTimes.push(arrayNewFH4DRIFT[x]);
-              }
-            }
-          }
-          console.log(`Creating new Backup`);
-          var json = JSON.stringify(arrayTimes);
-          fs.writeFile(spreadsheet + '.txt', json, function (err) {
-            if (err) return console.log(err);
-          });
-          client.login('your_discord_token');
-        }
-      });
-    } else {
-      console.log(`Backup file not found - creating one`);
-      var json = JSON.stringify(arrayTimes);
-      fs.writeFile(spreadsheet + '.txt', json, function (err) {
-        if (err) return console.log(err);
-      });
-      client.destroy();
-      return;
+      arrayTimes['fh4drift'] = [];
+      arrayTimes['fh4hlc'] = [];
+      client.login('');
     }
   });
 }
@@ -253,101 +264,92 @@ client.on('ready', () => {
   console.log(`Logged in as ${client.user.tag}!`);
 
   // notify admins of new entries
-          /*var channel = client.channels.find('name','admin');
-          channel.send(`There's ` + newTimes.length + ` entries on the HLC leaderboards`);*/
-          if(newTimes.length > 0)
-          {
-            const channel = client.channels.find('name','forza-hot-lap-challenge');
+  /*var channel = client.channels.find('name','admin');
+  channel.send(`There's ` + newTimes.length + ` entries on the HLC leaderboards`);*/
+  if (newTimes.length > 0) {
+    const channel = client.channels.find('name', 'forza-hot-lap-challenge');
 
-            if(!channel){
-              console.log('HLC channel not found');
-              return;
-            }
-  
-            channel.fetchMessages({
-              limit: 3
-            }).then(messages => channel.bulkDelete(messages));
-        
-            arrayTimes['fh4drift'] = arrayTimes['fh4drift'].sort(function(a, b){
-              return b.score-a.score
-            });
-            arrayTimes['fh4hlc'] = timeSort(arrayTimes['fh4hlc']);
-            arrayTimes['fm7hlc'] = timeSort(arrayTimes['fm7hlc']);
-        
-            var messageLeaderboardFH4Drift = '';
-            var index = 1;
-            if(arrayTimes['fh4drift'].length > 0)
-            {
-              arrayTimes['fh4drift'].forEach(element => {
-                messageLeaderboardFH4Drift += "**" + index + '**. ' + element['name'] + ' - ' + element['score'] + '\n';
-                index++;
-              });
-            }
-            else
-            {
-              messageLeaderboardFH4Drift = "There's no entries in this leaderboard !"
-            }
-        
-            var messageLeaderboardFH4HLC = '';
-            index = 1;
-            if(arrayTimes['fh4hlc'].length > 0)
-            {
-              arrayTimes['fh4hlc'].forEach(element => {
-                messageLeaderboardFH4HLC += "**" + index + '**. ' + element['name'] + ' - ' + element['score'] + '\n';
-                index++;
-              });
-            }
-            else
-            {
-              messageLeaderboardFH4HLC = "There's no entries in this leaderboard !"
-            }
-        
-            var messageLeaderboardFM7HLC = '';
-            index = 1;
-            if(arrayTimes['fm7hlc'].length > 0)
-            {
-              arrayTimes['fm7hlc'].forEach(element => {
-                messageLeaderboardFM7HLC += "**" + index + '**. ' + element['name'] + ' - ' + element['score'] + '\n';
-                index++;
-              });
-            }
-            else
-            {
-              messageLeaderboardFM7HLC = "There's no entries in this leaderboard !"
-            }
+    if (!channel) {
+      console.log('HLC channel not found');
+      return;
+    }
 
-            channel.send({
-              embed: {
-                title: "Current leaderboards for FH4 HLC",
-                color: 0xe67e22,
-                timestamp: new Date(),
-                fields: [{
-                  name: "FH4 HLC",
-                  value: messageLeaderboardFH4HLC
-                }, ]
-              }
-            }).then(() => channel.send({
-              embed: {
-                title: "Current leaderboards for FM7 HLC",
-                color: 0x2980b9,
-                timestamp: new Date(),
-                fields: [{
-                  name: "FM7 HLC",
-                  value: messageLeaderboardFM7HLC
-                }, ]
-              }
-            })).then(() => channel.send({
-              embed: {
-                title: "Current leaderboards for FH4 Drift",
-                color: 0x8e44ad,
-                timestamp: new Date(),
-                fields: [{
-                  name: "FH4 Drift",
-                  value: messageLeaderboardFH4Drift
-                }, ]
-              }
-            })).then(() => console.log("All message are sent")).then(() => client.destroy());
-          }
+    channel.fetchMessages({
+      limit: 2
+    }).then(messages => channel.bulkDelete(messages));
+
+    //arrayTimes['fm7hlc'] = timeSort(arrayTimes['fm7hlc']);
+
+    var messageLeaderboardFH4Drift = '';
+    var index = 1;
+    if (arrayTimes['fh4drift'].length > 0) {
+      arrayTimes['fh4drift'].forEach(element => {
+        messageLeaderboardFH4Drift += "**" + index + '**. ' + element['name'] + ' - ' + element['score'] + '\n';
+        index++;
+      });
+    } else {
+      messageLeaderboardFH4Drift = "There's no entries in this leaderboard !"
+    }
+
+    var messageLeaderboardFH4HLC = '';
+    index = 1;
+    if (arrayTimes['fh4hlc'].length > 0) {
+      arrayTimes['fh4hlc'].forEach(element => {
+        messageLeaderboardFH4HLC += "**" + index + '**. ' + element['name'] + ' - ' + element['score'] + '\n';
+        index++;
+      });
+    } else {
+      messageLeaderboardFH4HLC = "There's no entries in this leaderboard !"
+    }
+
+    /*var messageLeaderboardFM7HLC = '';
+    index = 1;
+    if(arrayTimes['fm7hlc'].length > 0)
+    {
+      arrayTimes['fm7hlc'].forEach(element => {
+        messageLeaderboardFM7HLC += "**" + index + '**. ' + element['name'] + ' - ' + element['score'] + '\n';
+        index++;
+      });
+    }
+    else
+    {
+      messageLeaderboardFM7HLC = "There's no entries in this leaderboard !"
+    }*/
+
+    channel.send({
+        embed: {
+          title: "Current leaderboards for FH4 HLC",
+          color: 0xe67e22,
+          timestamp: new Date(),
+          fields: [{
+            name: "FH4 HLC",
+            value: messageLeaderboardFH4HLC
+          }, ]
+        }
+      })
+      /*.then(() => channel.send({
+                    embed: {
+                      title: "Current leaderboards for FM7 HLC",
+                      color: 0x2980b9,
+                      timestamp: new Date(),
+                      fields: [{
+                        name: "FM7 HLC",
+                        value: messageLeaderboardFM7HLC
+                      }, ]
+                    }
+                  }))*/
+      .then(() => channel.send({
+        embed: {
+          title: "Current leaderboards for FH4 Drift",
+          color: 0x8e44ad,
+          timestamp: new Date(),
+          fields: [{
+            name: "FH4 Drift",
+            value: messageLeaderboardFH4Drift
+          }, ]
+        }
+      })).then(() => console.log("All message are sent")).then(() => client.destroy());
+  }
 });
 
 /*client.on('message', message => {
@@ -370,7 +372,7 @@ client.on('ready', () => {
         }
       });
     });*/
-  /*}
+/*}
 })*/
 
 
@@ -389,7 +391,12 @@ function timeSort(array) {
     //set min to the current iteration of i
     var min = i;
     for (var j = i + 1; j < array.length; j++) {
-      if (array[j]['score'].replace(":", "").replace(":", "").replace(".", "").replace(",", "") < array[min]['score'].replace(":", "").replace(":", "").replace(".", "").replace(",", "")) {
+      var score = array[j]['score'].replace(":", "").replace(":", "").replace(".", "").replace(",", "");
+      var minScore = array[min]['score'].replace(":", "").replace(":", "").replace(".", "").replace(",", "");
+      var subst = ''; 
+      minScore = parseInt(minScore.replace(/^[*^0]*/g, subst));
+      score = parseInt(score.replace(/^[*^0]*/g, subst));
+      if (score < minScore) {
         min = j;
       }
     }
@@ -403,3 +410,17 @@ function swap(array, firstIndex, secondIndex) {
   array[firstIndex] = array[secondIndex];
   array[secondIndex] = temp;
 };
+
+function getUnique(arr, comp) {
+
+  const unique = arr
+       .map(e => e[comp])
+
+     // store the keys of the unique objects
+    .map((e, i, final) => final.indexOf(e) === i && i)
+
+    // eliminate the dead keys & store unique objects
+    .filter(e => arr[e]).map(e => arr[e]);
+
+   return unique;
+}
