@@ -162,14 +162,14 @@ function listTimes(auth) {
         }),"name");
 
       } else {
-        console.log('No data found.');
+        console.log(date + 'No data found.');
       }
       if (Object.keys(arrayTimes).length === 0 && arrayTimes.constructor === Object) {
-        console.log("Error retrieving the data");
+        console.log(date + "Error retrieving the data");
         client.destroy();
         return;
       }
-      console.log(`Comparing new data`);
+      console.log(date + `Comparing new data`);
       var fileData = {};
       if (fs.existsSync(spreadsheet + '.txt')) {
         fs.readFile(spreadsheet + '.txt', 'utf8', function (err, data) {
@@ -179,7 +179,7 @@ function listTimes(auth) {
             console.log(date + `No differences found`);
             client.destroy();
           } else {
-            console.log(`Differences found - Checking values`);
+            console.log(date + `Differences found - Checking values`);
 
             var arrayNewFH4HLC = arrayTimes.fh4hlc;
             //var arrayNewFM7HLC = arrayTimes.fm7hlc;
@@ -191,7 +191,7 @@ function listTimes(auth) {
 
 
             if (!arraysEqual(arrayNewFH4HLC, arrayOldFH4HLC)) {
-              console.log(`Checking FH4 HLC values`);
+              console.log(date + `Checking FH4 HLC values`);
               for (let x = 0; x < arrayNewFH4HLC.length; x++) {
                 var check = 0;
                 for (let y = 0; y < arrayOldFH4HLC.length; y++) {
@@ -200,7 +200,7 @@ function listTimes(auth) {
                   }
                 }
                 if (check != 1) {
-                  console.log('+ New FH4 HLC entry found');
+                  console.log(date + '+ New FH4 HLC entry found');
                   newTimes.push(arrayNewFH4HLC[x]);
                 }
               }
@@ -223,7 +223,7 @@ function listTimes(auth) {
             }*/
 
             if (!arraysEqual(arrayNewFH4DRIFT, arrayOldFH4DRIFT)) {
-              console.log(`Checking FH4 Drift values`);
+              console.log(date + `Checking FH4 Drift values`);
               for (let x = 0; x < arrayNewFH4DRIFT.length; x++) {
                 var check = 0;
                 for (let y = 0; y < arrayOldFH4DRIFT.length; y++) {
@@ -237,7 +237,7 @@ function listTimes(auth) {
                 }
               }
             }
-            console.log(`Creating new Backup`);
+            console.log(date + `Creating new Backup`);
             var json = JSON.stringify(arrayTimes);
             fs.writeFile(spreadsheet + '.txt', json, function (err) {
               if (err) return console.log(err);
@@ -246,7 +246,7 @@ function listTimes(auth) {
           }
         });
       } else {
-        console.log(`Backup file not found - creating one`);
+        console.log(date + `Backup file not found - creating one`);
         var json = JSON.stringify(arrayTimes);
         fs.writeFile(spreadsheet + '.txt', json, function (err) {
           if (err) return console.log(err);
@@ -264,7 +264,7 @@ function listTimes(auth) {
 
 client.on('ready', () => {
 
-  console.log(`Logged in as ${client.user.tag}!`);
+  console.log(date + `Logged in as ${client.user.tag}!`);
 
   // notify admins of new entries
   /*var channel = client.channels.find('name','admin');
@@ -273,7 +273,7 @@ client.on('ready', () => {
     const channel = client.channels.find('name', 'forza-hot-lap-challenge');
 
     if (!channel) {
-      console.log('HLC channel not found');
+      console.log(date + 'HLC channel not found');
       return;
     }
 
@@ -351,7 +351,7 @@ client.on('ready', () => {
             value: messageLeaderboardFH4Drift
           }, ]
         }
-      })).then(() => console.log("All message are sent")).then(() => client.destroy());
+      })).then(() => console.log(date + "All message are sent")).then(() => client.destroy());
   }
 });
 
