@@ -142,8 +142,8 @@ function listTimes(auth) {
         rows.map((row) => {
           let timestamp = `${row[0]}`;
           let nickname = `${row[1]}`;
-          let fh4drift = `${row[6]}`;
-          let fh4proof = `${row[7]}`;
+          let fh4drift = `${row[4]}`;
+          let fh4proof = `${row[5]}`;
 
           if (fh4drift != '' && fh4drift != 'undefined' && fh4drift != '.') {
             arrayFH4DRIFT.push({
