@@ -19,7 +19,10 @@ const TOKEN_PATH = 'token.json';
 
 var spreadsheet = process.argv[2];
 var sheet = process.argv[3];
-var date = Date.now() + " - ";
+var date = new Date();
+var dateDMY = date.getFullYear()+'-'+(date.getMonth()+1)+'-'+date.getDate();
+var dateHMS = date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds();
+date = dateDMY+' '+dateHMS + " - ";
 
 // Load client secrets from a local file.
 fs.readFile('/home/hiteam/Documents/hlcwatcher/credentials.json', (err, content) => {
