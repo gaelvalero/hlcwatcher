@@ -277,9 +277,15 @@ client.on('ready', () => {
       return;
     }
 
-    channel.fetchMessages({
+    var messages = channel.fetchMessages({
       limit: 2
-    }).then(messages => channel.bulkDelete(messages));
+    }).then(messages => {
+      messages.forEach(element => {
+        if (element.author.bot) {
+          element.delete(1);
+        }
+      })
+    });
 
     //arrayTimes['fm7hlc'] = timeSort(arrayTimes['fm7hlc']);
 
